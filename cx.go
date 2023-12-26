@@ -19,14 +19,26 @@ func main () {
       },
     },
     Copyright: "(c) 2023 Brice Kamhoua",
-    Usage: "Make your terminal navigation 10x easier",
+    Usage: "A simple shortcuts manager",
     // UsageText: "cx [global options] command [command options] [arguments...]",
     Commands: []*cli.Command{
       {
         Name: "create",
         Aliases: []string{"c"},
         Usage: "Create a new shortcut",
+        Before: func(cCtx *cli.Context) error {
+          name := cCtx.Args().First()
+          if name == "" {
+            return cli.Exit("Please provide a name",1)
+          }
+          return validateName(name)
+        },
+        Flags: []cli.Flag{
+          &cli.StringFlag{Name: "path", Value: ".", Usage: "Specify the path to be saved", Aliases: []string{"p"}},
+        },
         Action: func(cCtx *cli.Context) error {
+         // name:=cCtx.Args().First()
+
           fmt.Println("shortcut create")
           return nil
         },
@@ -54,7 +66,7 @@ func main () {
         Aliases: []string{"d"},
         Usage: "delete a shortcut",
         Flags: []cli.Flag{
-          &cli.BoolFlag{Name: "all", Aliases: []string{"a"}},
+          &cli.BoolFlag{Name: "all", Aliases: []string{"a"}, Usage: "Delete all the saved shortcuts"},
         },
         Action: func(ctx *cli.Context) error {
           fmt.Println("delete shortcut")
