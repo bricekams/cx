@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -14,8 +15,17 @@ func validateName(s string) error {
   return nil
 }
 
-func resolvePath(p string) error {
-  if _,err := os.Stat(p); os.IsNotExist(err) {
+func resolvePath(p string) (string,error) {
+  rootedPath,err := filepath.Abs(p)
+  if err != nil {
+    return "", fmt.Errorf("Error while resolving the rooted path")
   }
-  return nil
+  return rootedPath, nil
+}
+
+func exists(path string) (bool, error) {
+    _, err := os.Stat(path)
+    if err == nil { return true, nil }
+    if os.IsNotExist(err) { return false, nil }
+    return false, err
 }

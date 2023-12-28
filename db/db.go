@@ -73,7 +73,7 @@ func Rename(oldName string, newName string) error {
   }
   db.Update(func(tx *bolt.Tx) error {
     b := tx.Bucket([]byte(bucketName))
-    path := Get(db,oldName)
+    path := Get(oldName)
     err := b.Put([]byte(newName),path)
     if err!=nil { return fmt.Errorf("An error occured while renaming the shortcut path") }
     err_delete := b.Delete([]byte(oldName))
@@ -126,7 +126,9 @@ func PathExists(db *bolt.DB, path string) bool {
   return exists
 }
 
-func Get(db *bolt.DB, name string) []byte {
+func Get(name string) []byte {
+  db := OpenDb()
+  defer db.Close()
   var path []byte
   db.View(func(tx *bolt.Tx) error {
     b := tx.Bucket([]byte(bucketName))
