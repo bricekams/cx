@@ -4,7 +4,6 @@ import (
   "fmt"
   "log"
   "os"
-
   "github.com/bricekams/cx/db"
   "github.com/urfave/cli/v2"
 )
@@ -25,8 +24,11 @@ func main() {
     Copyright: "(c) 2023 Brice Kamhoua",
     Usage:     "A simple shortcuts manager",
     // UsageText: "cx [global options] command [command options] [arguments...]",
-    Commands: []*cli.Command{
+    Action: func(ctx *cli.Context) error {
 
+      return nil
+    },
+    Commands: []*cli.Command{
       {
         Name:    "create",
         Aliases: []string{"c"},
@@ -54,14 +56,6 @@ func main() {
             if err_path != nil {
               log.Fatal("An error occurred while processing the path")
             }
-          }
-          exists, err_exists := exists(path)
-          if err_exists != nil {
-            log.Fatal("An error occured while processing the path")
-          }
-          if !exists {
-            log.Println(path)
-            log.Fatal("The given path does not exists")
           }
           rootedPath, err_rootedPath := resolvePath(path)
           if err_rootedPath != nil {
@@ -93,23 +87,18 @@ func main() {
           var newPath string
           fmt.Println("The path for this shortcut is:", path)
           fmt.Print("Enter the new path: ")
-          for {
-            fmt.Scan(&newPath)
-            var err_newPath error
-            if newPath == "" {
-              newPath, err_newPath = os.Getwd()
-              if err_newPath != nil {
-                log.Fatal("An error occurred while processing the path")
-              }
+          fmt.Scan(&newPath)
+          var err_newPath error
+          if newPath == "" {
+            newPath, err_newPath = os.Getwd()
+            if err_newPath != nil {
+              log.Fatal("An error occurred while processing the path")
             }
-            exists, err_exists := exists(newPath)
-            if err_exists != nil {
-              log.Fatal("An error occured while processing the path")
-            }
-            if exists {
-              break
-            }
-            fmt.Print("The given path does not exists, enter a new one: ")
+          }
+          var err_ error = nil
+          newPath, err_ = resolvePath(newPath)
+          if err_!=nil {
+            log.Fatal(err_.Error())
           }
           err := db.Update(name,newPath)
           if err != nil {
@@ -159,7 +148,7 @@ func main() {
         Usage:   "Delete a shortcut",
         Before: func(cCtx *cli.Context) error {
           name := cCtx.Args().First()
-          if name == "" {
+          if name == "" && !cCtx.Bool("all") {
             log.Fatal("Please provide the shortcut name")
           }
           return nil
@@ -169,11 +158,21 @@ func main() {
         },
         Action: func(cCtx *cli.Context) error {
           name := cCtx.Args().First()
-          err := db.Delete(name)
+          all := cCtx.Bool("all")
+
+          if !all {
+            err := db.Delete(name,false)
+            if err!=nil {
+              log.Fatal(err.Error())
+            }
+            log.Println("Shortcut", name, "has been deleted succesfully")
+            return nil
+          }
+          err := db.Delete(name,true)
           if err!=nil {
             log.Fatal(err.Error())
           }
-          log.Println("Shortcut", name, "has been deleted succesfully")
+          log.Println("All the shortcuts deleted successfully")
           return nil
         },
       },

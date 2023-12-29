@@ -83,12 +83,28 @@ func Rename(oldName string, newName string) error {
   return nil
 }
 
-func Delete(name string) error {
+func Delete(name string, all bool) error {
   db := OpenDb()
   defer db.Close()
+
+  if all {
+    err := db.View(func(tx *bolt.Tx) error {
+      b := tx.Bucket([]byte(bucketName))
+      c := b.Cursor()
+      for k, _ := c.First(); k != nil; k, _ = c.Next() {
+        b.Delete(k)
+      }
+      return nil
+    })
+    if err!=nil {
+      return fmt.Errorf("An error occured while deleting")
+    }
+    return nil
+  }
   if !Exists(db,name) {
     return fmt.Errorf("A shortcut with that name does not exists")
   }
+
   err := db.Update(func(tx *bolt.Tx) error {
     b := tx.Bucket([]byte(bucketName))
     err := b.Delete([]byte(name))
